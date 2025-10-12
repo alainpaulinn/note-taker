@@ -50,9 +50,8 @@ export async function createNotebook(formData: FormData) {
       },
     })
 
-    revalidatePath("/app/notebooks")
-    revalidatePath("/app")
-    redirect(`/app/notebooks/${notebook.id}`)
+    revalidatePath("/notebooks")
+    return { success: true, notebook }
   } catch (error) {
     console.error("Error creating notebook:", error)
     return {
