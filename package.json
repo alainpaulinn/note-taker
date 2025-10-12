@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "prisma generate && next build",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "vercel-build": "pnpm run migrate:deploy && pnpm run build",
     "migrate:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "seed": "npx tsx scripts/seed.ts"
