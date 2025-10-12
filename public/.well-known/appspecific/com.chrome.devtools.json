@@ -1,0 +1,21 @@
+{
+  "name": "ArchiGenie",
+  "version": "1.0.0",
+  "description": "Intelligent architecture project management platform",
+  "developer": {
+    "name": "ArchiGenie Team",
+    "url": "https://archigenie.com"
+  },
+  "app": {
+    "urls": [
+      {
+        "url": "/",
+        "type": "text/html"
+      }
+    ]
+  },
+  "runtime": {
+    "name": "Next.js",
+    "version": "15.x"
+  }
+}

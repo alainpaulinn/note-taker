@@ -1,0 +1,681 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  // Optional for WebAuthn support
+  Authenticator Authenticator[]
+ 
+  // Extended user fields
+  firstName     String?
+  lastName      String?
+  company       String?
+  jobTitle      String?
+  bio           String?
+  timezone      String?         @default("pst")
+  role          String          @default("user") // Legacy field, replaced by RBAC
+  
+  // Organization quotas and limits
+  maxOrganizations Int           @default(0) // How many organizations this user can create
+  usedOrganizations Int          @default(0) // How many organizations this user has created
+  
+  // RBAC Relations
+  userRoles     UserRole[]
+  userOrganizations UserOrganization[]
+  
+  // Legacy Relations (kept for backward compatibility)
+  preferences   UserPreferences?
+  notificationSettings NotificationSettings?
+  apiKeys       ApiKey[]
+  projects      Project[]
+  projectAccess ProjectAccess[]
+  
+  // Note-taking Relations
+  notebooks     Notebook[]
+  pages         Page[]
+  materials     Material[]
+  
+  // Audit Relations
+  auditLogs     AuditLog[]
+  
+  // Invitation Relations
+  organizationInvitationsSent OrganizationInvitation[] @relation("OrganizationInviter")
+  projectInvitationsSent ProjectInvitation[] @relation("ProjectInviter")
+  notebookInvitationsSent NotebookInvitation[] @relation("NotebookInviter")
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Organizations for multi-tenancy
+model Organization {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique // URL-friendly identifier
+  description String?
+  
+  // Organization settings
+  logo        String?
+  website     String?
+  industry    String?
+  size        String?   // "startup", "small", "medium", "large", "enterprise"
+  
+  // Billing and subscription
+  subscriptionTier String @default("free") // "free", "pro", "enterprise"
+  subscriptionStatus String @default("active") // "active", "cancelled", "suspended"
+  billingEmail String?
+  
+  // Status
+  isActive    Boolean   @default(true)
+  
+  // Relations
+  userOrganizations UserOrganization[]
+  projects    Project[]
+  notebooks   Notebook[]
+  userRoles   UserRole[]
+  auditLogs   AuditLog[]
+  invitations OrganizationInvitation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([subscriptionTier])
+}
+
+// User-Organization relationships
+model UserOrganization {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  
+  // Status
+  status         String       @default("active") // "active", "pending", "suspended"
+  joinedAt       DateTime     @default(now())
+  invitedBy      String?      // User ID who invited this user
+  
+  // Relations
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// Roles in the RBAC system
+model Role {
+  id          String    @id @default(cuid())
+  name        String    // "super_admin", "org_owner", "project_manager", "collaborator", "viewer"
+  displayName String    // "Super Administrator", "Organization Owner", etc.
+  description String?
+  
+  // Role hierarchy and scope
+  level       Int       // 1=super_admin, 2=org_owner, 3=project_manager, 4=collaborator, 5=viewer
+  scope       String    // "system", "organization", "project"
+  
+  // System vs custom roles
+  isSystemRole Boolean  @default(true)  // System roles cannot be deleted
+  isActive     Boolean  @default(true)
+  
+  // Relations
+  rolePermissions RolePermission[]
+  userRoles    UserRole[]
+  organizationInvitations OrganizationInvitation[]
+  projectInvitations ProjectInvitation[]
+  notebookInvitations NotebookInvitation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([name])
+  @@index([scope])
+  @@index([level])
+}
+
+// Permissions in the RBAC system
+model Permission {
+  id          String    @id @default(cuid())
+  name        String    @unique // "system.admin", "org.manage", "project.edit", etc.
+  displayName String    // "System Administration", "Manage Organization", etc.
+  description String?
+  
+  // Permission categorization
+  category    String    // "system", "organization", "project", "user"
+  resource    String    // "users", "projects", "settings", etc.
+  action      String    // "create", "read", "update", "delete", "manage"
+  
+  // Status
+  isActive    Boolean   @default(true)
+  
+  // Relations
+  rolePermissions RolePermission[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([category])
+  @@index([resource])
+}
+
+// Role-Permission assignments
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  
+  // Relations
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([roleId, permissionId])
+}
+
+// User-Role assignments with context
+model UserRole {
+  id             String        @id @default(cuid())
+  userId         String
+  roleId         String
+  organizationId String?       // NULL for system-level roles
+  projectId      String?       // NULL for non-project-specific roles
+  notebookId     String?       // NULL for non-notebook-specific roles
+  
+  // Time-based access
+  expiresAt      DateTime?     // NULL for permanent access
+  isActive       Boolean       @default(true)
+  
+  // Assignment metadata
+  assignedBy     String?       // User ID who assigned this role
+  assignedReason String?       // Optional reason for assignment
+  
+  // Relations
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  notebook       Notebook?     @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([notebookId])
+  @@index([expiresAt])
+  @@index([userId, roleId, organizationId, projectId, notebookId])
+}
+
+// Audit logging for security and compliance
+model AuditLog {
+  id             String        @id @default(cuid())
+  userId         String?       // NULL for system actions
+  organizationId String?       // NULL for system-level actions
+  
+  // Action details
+  action         String        // "user.login", "role.assigned", "project.created", etc.
+  resource       String?       // Resource type affected
+  resourceId     String?       // Specific resource ID
+  
+  // Context
+  ipAddress      String?
+  userAgent      String?
+  details        Json?         // Additional action details
+  
+  // Status
+  success        Boolean       @default(true)
+  errorMessage   String?
+  
+  // Relations
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Notebook {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  color       String?   @default("#3b82f6") // Hex color for notebook
+  icon        String?   // Icon identifier (e.g., "book", "folder", etc.)
+  
+  // Ownership
+  userId         String
+  organizationId String?
+  
+  // Privacy and access
+  visibility  String    @default("private") // "private", "organization", "public"
+  
+  // Relations
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pages       Page[]
+  materials   Material[]
+  userRoles   UserRole[]        // RBAC notebook-specific roles
+  invitations NotebookInvitation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([userId])
+  @@index([visibility])
+}
+
+model Page {
+  id          String    @id @default(cuid())
+  title       String
+  content     String?   // Rich text content (HTML or JSON)
+  type        String    @default("text") // "text", "drawing", "mixed"
+  drawingData Json?     // Excalidraw drawing data
+  
+  // Page metadata
+  order       Int       @default(0) // For ordering pages within notebook
+  tags        String[]  // Array of tags for categorization
+  isArchived  Boolean   @default(false)
+  
+  // Ownership
+  notebookId  String
+  userId      String
+  
+  // Relations
+  notebook    Notebook  @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([notebookId])
+  @@index([userId])
+  @@index([isArchived])
+}
+
+model Material {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String    // e.g., "pdf", "image", "video", "document", "link"
+  
+  // File data
+  fileUrl     String?
+  fileName    String?
+  fileSize    Int?
+  mimeType    String?
+  thumbnailUrl String? // For images/videos
+  
+  // External link data
+  externalUrl String?
+  
+  // Material metadata
+  tags        String[]  // Array of tags for categorization
+  isArchived  Boolean   @default(false)
+  
+  // Ownership
+  notebookId  String
+  userId      String
+  
+  // Relations
+  notebook    Notebook  @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([notebookId])
+  @@index([userId])
+  @@index([isArchived])
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String    // e.g., "residential", "commercial", "industrial"
+  status      String    @default("active") // "active", "completed", "archived"
+  
+  // Ownership
+  userId         String        // Legacy owner field (kept for backward compatibility)
+  organizationId String?       // Organization that owns this project (nullable during migration)
+  
+  // Project metadata
+  location    String?
+  client      String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  
+  // Privacy and access
+  visibility  String    @default("organization") // "organization", "project_members", "public"
+  
+  // Region configuration
+  regionId    String?
+  
+  // Relations
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  region      Region?           @relation(fields: [regionId], references: [id], onDelete: SetNull)
+  assets      ProjectAsset[]
+  projectAccess ProjectAccess[]
+  userRoles   UserRole[]        // RBAC project-specific roles
+  invitations ProjectInvitation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+}
+
+model ProjectAsset {
+  id        String  @id @default(cuid())
+  projectId String
+  name      String
+  type      String  // e.g., "drawing", "model", "document", "image"
+  category  String? // e.g., "floor_plan", "elevation", "section", "3d_model"
+  
+  // Asset data
+  fileUrl   String?
+  fileName  String?
+  fileSize  Int?
+  mimeType  String?
+  
+  // Asset metadata
+  version   Int     @default(1)
+  tags      String[] // Array of tags for categorization
+  
+  // Relations
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectAccess {
+  id        String  @id @default(cuid())
+  userId    String
+  projectId String
+  
+  // Relations
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  accessedAt DateTime @default(now())
+  
+  @@unique([userId, projectId])
+}
+
+// Project invitations
+model ProjectInvitation {
+  id             String        @id @default(cuid())
+  projectId      String
+  invitedEmail   String
+  invitedBy      String
+  roleId         String        // Role to assign when invitation is accepted
+  
+  // Invitation details
+  status         String        @default("pending") // "pending", "accepted", "declined", "expired"
+  message        String?       // Optional invitation message
+  expiresAt      DateTime      @default(dbgenerated("now() + interval '7 days'"))
+  
+  // Relations
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inviter        User          @relation("ProjectInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+  role           Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([projectId, invitedEmail])
+  @@index([invitedEmail])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model UserPreferences {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  theme            String  @default("system")
+  units            String  @default("imperial")
+  autoSaveInterval String  @default("5")
+  showGrid         Boolean @default(true)
+  enableTooltips   Boolean @default(true)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationSettings {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  designComplete      Boolean @default(true)
+  collaboration       Boolean @default(true)
+  weeklyReports       Boolean @default(false)
+  marketing           Boolean @default(false)
+  billing             Boolean @default(true)
+  emailNotifications  Boolean @default(true)
+  pushNotifications   Boolean @default(true)
+  smsNotifications    Boolean @default(false)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  key       String    @unique
+  lastUsed  DateTime?
+  isActive  Boolean   @default(true)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+ 
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
+}
+ 
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+ 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@id([identifier, token])
+}
+ 
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([userId, credentialID])
+}
+
+// Region management for construction regulations
+model Region {
+  id          String    @id @default(cuid())
+  name        String
+  code        String?   // e.g., "BE", "BE-VLG", "BE-WAL", "BE-BRU"
+  type        String    // e.g., "country", "state", "province", "city", "municipality"
+  parentId    String?
+  
+  // Geographical data
+  centerLat   Float?    // Center latitude for map display
+  centerLng   Float?    // Center longitude for map display
+  bounds      Json?     // Geographical bounds for map zooming
+  
+  // Status
+  isActive    Boolean   @default(true)
+  
+  // Relations
+  parent      Region?   @relation("RegionHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Region[]  @relation("RegionHierarchy")
+  dataSource  RegionDataSource?
+  projects    Project[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([code])
+  @@index([parentId])
+  @@index([type])
+}
+
+model RegionDataSource {
+  id              String  @id @default(cuid())
+  regionId        String  @unique
+  
+  // Data retrieval configuration
+  dataSourceType  String  // e.g., "api", "scraper", "manual", "file"
+  apiEndpoint     String? // API endpoint URL
+  apiKey          String? // API key or authentication
+  apiHeaders      Json?   // Additional headers
+  apiMethod       String? @default("GET") // HTTP method
+  
+  // Scraper configuration
+  scraperUrl      String? // URL to scrape
+  scraperConfig   Json?   // Scraper configuration
+  
+  // File configuration
+  fileUrl         String? // Static file URL
+  fileType        String? // e.g., "json", "xml", "csv"
+  
+  // Processing configuration
+  dataMapping     Json?   // How to map data fields
+  updateFrequency String? @default("daily") // How often to refresh data
+  lastUpdated     DateTime?
+  
+  // Status
+  isActive        Boolean @default(true)
+  
+  // Relations
+  region          Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Organization invitations
+model OrganizationInvitation {
+  id             String        @id @default(cuid())
+  organizationId String
+  invitedEmail   String
+  invitedBy      String
+  roleId         String        // Role to assign when invitation is accepted
+  
+  // Invitation details
+  status         String        @default("pending") // "pending", "accepted", "declined", "expired"
+  message        String?       // Optional invitation message
+  expiresAt      DateTime      @default(dbgenerated("now() + interval '7 days'"))
+  
+  // Relations
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter        User          @relation("OrganizationInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+  role           Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([organizationId, invitedEmail])
+  @@index([invitedEmail])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// Notebook invitations
+model NotebookInvitation {
+  id             String        @id @default(cuid())
+  notebookId     String
+  invitedEmail   String
+  invitedBy      String
+  roleId         String        // Role to assign when invitation is accepted
+  
+  // Invitation details
+  status         String        @default("pending") // "pending", "accepted", "declined", "expired"
+  message        String?       // Optional invitation message
+  expiresAt      DateTime      @default(dbgenerated("now() + interval '7 days'"))
+  
+  // Relations
+  notebook       Notebook      @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  inviter        User          @relation("NotebookInviter", fields: [invitedBy], references: [id], onDelete: Cascade)
+  role           Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([notebookId, invitedEmail])
+  @@index([invitedEmail])
+  @@index([status])
+  @@index([expiresAt])
+}
