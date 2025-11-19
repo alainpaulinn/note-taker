@@ -35,7 +35,7 @@ export default function NewNotebookPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/notebooks">
+          <Link href="/app/notebooks">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebooks
           </Link>
@@ -151,7 +151,7 @@ export default function NewNotebookPage() {
                 Create Notebook
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link href="/notebooks">
+                <Link href="/app/notebooks">
                   Cancel
                 </Link>
               </Button>

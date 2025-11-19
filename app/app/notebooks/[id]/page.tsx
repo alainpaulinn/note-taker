@@ -34,7 +34,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/notebooks">
+          <Link href="/app/notebooks">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebooks
           </Link>
@@ -67,7 +67,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/notebooks/${notebook.id}/edit`}>
+            <Link href={`/app/notebooks/${notebook.id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Link>
@@ -94,7 +94,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Pages</h2>
             <Button asChild>
-              <Link href={`/notebooks/${notebook.id}/pages/new`}>
+              <Link href={`/app/notebooks/${notebook.id}/pages/new`}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Page
               </Link>
@@ -110,7 +110,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
                   Create your first page to start taking notes
                 </p>
                 <Button asChild>
-                  <Link href={`/notebooks/${notebook.id}/pages/new`}>
+                  <Link href={`/app/notebooks/${notebook.id}/pages/new`}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create Page
                   </Link>
@@ -146,12 +146,12 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
                     </div>
                     <div className="flex gap-2">
                       <Button asChild variant="outline" size="sm" className="flex-1">
-                        <Link href={`/notebooks/${notebook.id}/pages/${page.id}`}>
+                        <Link href={`/app/notebooks/${notebook.id}/pages/${page.id}`}>
                           Open
                         </Link>
                       </Button>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/notebooks/${notebook.id}/pages/${page.id}/edit`}>
+                        <Link href={`/app/notebooks/${notebook.id}/pages/${page.id}/edit`}>
                           Edit
                         </Link>
                       </Button>
@@ -167,7 +167,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Materials</h2>
             <Button asChild>
-              <Link href={`/notebooks/${notebook.id}/materials/new`}>
+              <Link href={`/app/notebooks/${notebook.id}/materials/new`}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Material
               </Link>
@@ -183,7 +183,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
                   Upload files, add links, or attach resources to this notebook
                 </p>
                 <Button asChild>
-                  <Link href={`/notebooks/${notebook.id}/materials/new`}>
+                  <Link href={`/app/notebooks/${notebook.id}/materials/new`}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Material
                   </Link>
@@ -222,7 +222,7 @@ export default async function NotebookPage({ params }: NotebookPageProps) {
                         </Link>
                       </Button>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/notebooks/${notebook.id}/materials/${material.id}/edit`}>
+                        <Link href={`/app/notebooks/${notebook.id}/materials/${material.id}/edit`}>
                           Edit
                         </Link>
                       </Button>

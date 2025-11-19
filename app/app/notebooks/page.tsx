@@ -17,7 +17,7 @@ export default async function NotebooksPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/notebooks/new">
+          <Link href="/app/notebooks/new">
             <Plus className="mr-2 h-4 w-4" />
             New Notebook
           </Link>
@@ -32,7 +32,7 @@ export default async function NotebooksPage() {
             Create your first notebook to start organizing your learning materials
           </p>
           <Button asChild>
-            <Link href="/notebooks/new">
+            <Link href="/app/notebooks/new">
               <Plus className="mr-2 h-4 w-4" />
               Create Notebook
             </Link>
@@ -71,12 +71,12 @@ export default async function NotebooksPage() {
                 </div>
                 <div className="flex gap-2">
                   <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link href={`/notebooks/${notebook.id}`}>
+                    <Link href={`/app/notebooks/${notebook.id}`}>
                       Open
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/notebooks/${notebook.id}/edit`}>
+                    <Link href={`/app/notebooks/${notebook.id}/edit`}>
                       Edit
                     </Link>
                   </Button>

@@ -9,10 +9,20 @@ interface ClientProvidersProps {
 }
 
 export function ClientProviders({ children, session }: ClientProvidersProps) {
-  return (
-    <SessionProvider session={session}>
+  const content = (
+    <>
       {children}
       <Toaster />
+    </>
+  )
+
+  if (typeof session === "undefined") {
+    return content
+  }
+
+  return (
+    <SessionProvider session={session}>
+      {content}
     </SessionProvider>
   )
 } 

@@ -27,7 +27,7 @@ export default async function PageEditor({ params }: PageEditorProps) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/notebooks/${params.id}`}>
+          <Link href={`/app/notebooks/${params.id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebook
           </Link>
@@ -42,8 +42,8 @@ export default async function PageEditor({ params }: PageEditorProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href={`/notebooks/${params.id}/pages/${params.pageId}`}>
+            <Button variant="outline" asChild>
+              <Link href={`/app/notebooks/${params.id}/pages/${params.pageId}`}>
               <Eye className="mr-2 h-4 w-4" />
               View
             </Link>
