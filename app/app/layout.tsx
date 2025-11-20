@@ -8,10 +8,11 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader, HeaderProvider } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { ClientProviders } from "@/components/ui/client-providers"
+import { BRAND } from "@/lib/branding"
 
 export const metadata: Metadata = {
-  title: "App - NoteMaster",
-  description: "Your personal learning companion workspace.",
+  title: `${BRAND.name} Workspace`,
+  description: "Plan by date, capture brainstorming sketches, and keep every knowledge stream in sync.",
 }
 
 export default async function AppLayout({

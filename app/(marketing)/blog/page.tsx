@@ -76,7 +76,7 @@ export default function BlogPage() {
             Learning Insights & Tips
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Discover strategies, tips, and insights to enhance your learning experience with NoteMaster.
+            Discover strategies, tips, and insights to enhance your learning experience with A-notes.
           </p>
         </div>
 
@@ -134,10 +134,11 @@ export default function BlogPage() {
 
         <div className="mt-16 text-center">
           <Button asChild size="lg">
-            <Link href="/signup">Start learning with NoteMaster</Link>
+            <Link href="/signup">Start learning with A-notes</Link>
           </Button>
         </div>
       </div>
     </div>
   )
 }
+

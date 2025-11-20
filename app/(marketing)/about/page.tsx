@@ -20,7 +20,7 @@ const values = [
   },
   {
     name: "Accessibility",
-    description: "Learning should be accessible to everyone. We're committed to making NoteMaster inclusive and easy to use.",
+    description: "Learning should be accessible to everyone. We're committed to making A-notes inclusive and easy to use.",
     icon: Heart,
   },
 ]
@@ -58,7 +58,7 @@ export default function AboutPage() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-            About NoteMaster
+            About A-notes
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
             We're on a mission to revolutionize how people learn, organize knowledge, and share ideas.
@@ -87,7 +87,7 @@ export default function AboutPage() {
           </h2>
           <div className="prose prose-lg mx-auto text-muted-foreground">
             <p>
-              NoteMaster was born out of frustration with existing note-taking tools. As students and professionals, 
+              A-notes was born out of frustration with existing note-taking tools. As students and professionals, 
               we found ourselves juggling multiple apps to capture different types of content - text notes, diagrams, 
               files, and more. We knew there had to be a better way.
             </p>
@@ -97,7 +97,7 @@ export default function AboutPage() {
               from quick text notes to complex visual diagrams, all while keeping your data secure and accessible.
             </p>
             <p>
-              Today, NoteMaster serves thousands of learners worldwide, from students preparing for exams to 
+              Today, A-notes serves thousands of learners worldwide, from students preparing for exams to 
               professionals managing complex projects. We're constantly evolving based on user feedback, 
               always striving to make learning more effective and enjoyable.
             </p>
@@ -137,3 +137,4 @@ export default function AboutPage() {
     </div>
   )
 }
+

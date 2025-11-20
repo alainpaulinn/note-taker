@@ -31,10 +31,10 @@ export default function DemoPage() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-            See NoteMaster in action
+            See A-notes in action
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Watch our interactive demo to see how NoteMaster can transform your learning experience.
+            Watch our interactive demo to see how A-notes can transform your learning experience.
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export default function DemoPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Interactive Demo</h3>
                 <p className="text-muted-foreground mb-6">
-                  Click play to see NoteMaster's features in action
+                  Click play to see A-notes's features in action
                 </p>
                 <Button size="lg">
                   <Play className="mr-2 h-4 w-4" />
@@ -80,7 +80,7 @@ export default function DemoPage() {
               Ready to try it yourself?
             </h2>
             <p className="text-muted-foreground mb-8">
-              Start with our free plan and experience the power of NoteMaster.
+              Start with our free plan and experience the power of A-notes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg">
@@ -99,3 +99,4 @@ export default function DemoPage() {
     </div>
   )
 }
+

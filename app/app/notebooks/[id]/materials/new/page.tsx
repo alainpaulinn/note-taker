@@ -5,17 +5,18 @@ import { ArrowLeft, Plus, Link as LinkIcon, Upload } from "lucide-react"
 import Link from "next/link"
 
 interface NewMaterialPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function NewMaterialPage({ params }: NewMaterialPageProps) {
+export default async function NewMaterialPage({ params }: NewMaterialPageProps) {
+  const { id } = await params
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/app/notebooks/${params.id}`}>
+          <Link href={`/app/notebooks/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebook
           </Link>
@@ -31,7 +32,7 @@ export default function NewMaterialPage({ params }: NewMaterialPageProps) {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <MaterialUpload
-            notebookId={params.id}
+            notebookId={id}
             onUpload={(material) => {
               console.log("Material uploaded:", material)
               // TODO: Show success message and redirect

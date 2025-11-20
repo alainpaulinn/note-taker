@@ -173,7 +173,7 @@ export function DrawingCanvas({
             zenModeEnabled={false}
             gridModeEnabled={true}
             theme="light"
-            name="NoteMaster Drawing"
+            name="A-notes Drawing"
             UIOptions={{
               canvasActions: {
                 loadScene: false,
@@ -191,3 +191,4 @@ export function DrawingCanvas({
     </div>
   )
 }
+

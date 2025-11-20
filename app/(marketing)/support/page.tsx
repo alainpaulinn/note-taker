@@ -21,7 +21,7 @@ const supportOptions = [
     name: "Email Support",
     description: "Send us an email and we'll get back to you within 24 hours.",
     icon: Mail,
-    href: "mailto:support@notemaster.com",
+    href: "mailto:support@A-notes.com",
     action: "Send Email",
   },
   {
@@ -35,7 +35,7 @@ const supportOptions = [
 
 const faqs = [
   {
-    question: "How do I get started with NoteMaster?",
+    question: "How do I get started with A-notes?",
     answer: "Simply sign up for a free account and start creating your first notebook. You can upload files, create notes, and draw diagrams right away.",
   },
   {
@@ -69,7 +69,7 @@ export default function SupportPage() {
             We're here to help
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Get the support you need to make the most of NoteMaster. Our team is ready to help you succeed.
+            Get the support you need to make the most of A-notes. Our team is ready to help you succeed.
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export default function SupportPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg">
-                <Link href="mailto:support@notemaster.com">Contact Support</Link>
+                <Link href="mailto:support@A-notes.com">Contact Support</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <Link href="/signup">Get Started</Link>
@@ -130,3 +130,4 @@ export default function SupportPage() {
     </div>
   )
 }
+

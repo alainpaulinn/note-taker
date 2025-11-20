@@ -43,7 +43,7 @@ const navigation = {
     },
     {
       name: "Email",
-      href: "mailto:hello@notemaster.com",
+      href: "mailto:hello@A-notes.com",
       icon: Mail,
     },
   ],
@@ -76,7 +76,7 @@ export function Footer() {
             </div>
           </div>
           <p className="text-center text-xs leading-5 text-muted-foreground">
-            &copy; 2024 NoteMaster, Inc. All rights reserved.
+            &copy; 2024 A-notes, Inc. All rights reserved.
           </p>
         </div>
       </div>
@@ -135,3 +135,4 @@ export function Footer() {
     </footer>
   )
 }
+

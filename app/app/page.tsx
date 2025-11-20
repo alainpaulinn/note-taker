@@ -2,16 +2,11 @@ import { getNotebooks } from "@/app/actions/notebook"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/site-header"
-import { 
-  BookOpen, 
-  FileText, 
-  Image, 
-  Plus, 
-  TrendingUp, 
-  Clock,
-  Users,
-  Star
-} from "lucide-react"
+import { OfflineIndicator } from "@/components/offline-indicator"
+import { NotebookPlanner } from "@/components/notebook-planner"
+import { QuickCaptureCard } from "@/components/quick-capture-card"
+import { BRAND } from "@/lib/branding"
+import { BookOpen, FileText, Image, Plus, TrendingUp, Star, PenTool } from "lucide-react"
 import Link from "next/link"
 
 export default async function AppPage() {
@@ -21,8 +16,8 @@ export default async function AppPage() {
   return (
     <>
       <PageHeader 
-        title="Dashboard"
-        description="Welcome to your learning workspace"
+        title="Mission control"
+        description="One timeline for study plans, meeting notes, and ideation canvases."
         actions={
           <Button asChild size="sm">
             <Link href="/app/notebooks/new">
@@ -33,11 +28,19 @@ export default async function AppPage() {
         }
       />
       <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">Welcome to NoteMaster</h1>
-          <p className="text-xl text-muted-foreground mt-2">
-            Your personal learning companion
-          </p>
+        <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/15 via-background to-background p-6 shadow-[0_0_60px_rgba(108,99,255,0.15)]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-primary">Welcome back</p>
+              <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                {BRAND.heroTagline}
+              </h1>
+              <p className="text-base text-muted-foreground mt-2 max-w-2xl">
+                {BRAND.description}
+              </p>
+            </div>
+            <OfflineIndicator />
+          </div>
         </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -98,14 +101,16 @@ export default async function AppPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Notebooks</CardTitle>
-            <CardDescription>
-              Your most recently updated notebooks
-            </CardDescription>
-          </CardHeader>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <NotebookPlanner notebooks={notebooks as any} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Notebooks</CardTitle>
+              <CardDescription>
+                Your most recently updated notebooks
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             {recentNotebooks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8">
@@ -151,46 +156,49 @@ export default async function AppPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common tasks to get you started
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              <Button asChild variant="outline" className="justify-start">
+        <div className="space-y-6">
+          <QuickCaptureCard />
+          <Card>
+            <CardHeader>
+              <CardTitle>Versatile modes</CardTitle>
+              <CardDescription>
+                Jump into sketching, markdown or meeting minutes in one tap.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild variant="outline" className="w-full justify-start">
                 <Link href="/app/notebooks/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create New Notebook
+                  Create new notebook
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="justify-start">
+              <Button asChild variant="outline" className="w-full justify-start">
                 <Link href="/app/canvas">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Start Drawing
+                  <PenTool className="mr-2 h-4 w-4" />
+                  Launch sketch canvas
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="justify-start">
+              <Button asChild variant="outline" className="w-full justify-start">
                 <Link href="/app/templates">
                   <Star className="mr-2 h-4 w-4" />
-                  Browse Templates
+                  Browse smart templates
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="justify-start">
+              <Button asChild variant="outline" className="w-full justify-start">
                 <Link href="/app/materials">
                   <Image className="mr-2 h-4 w-4" />
-                  Manage Materials
+                  Manage materials
                 </Link>
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
       </div>
     </>
   )
 }
+

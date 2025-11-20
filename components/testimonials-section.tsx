@@ -3,7 +3,7 @@ import Image from "next/image"
 
 const testimonials = [
   {
-    body: "NoteMaster has completely transformed how I organize my studies. The rich text editor and drawing tools make it easy to create comprehensive notes.",
+    body: "A-notes has completely transformed how I organize my studies. The rich text editor and drawing tools make it easy to create comprehensive notes.",
     author: {
       name: "Sarah Chen",
       handle: "sarahchen",
@@ -77,3 +77,4 @@ export function TestimonialsSection() {
     </div>
   )
 }
+

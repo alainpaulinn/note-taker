@@ -90,13 +90,27 @@ export function MaterialUpload({ notebookId, onUpload }: MaterialUploadProps) {
     try {
       // Upload files
       for (const file of files) {
+        const upload = new FormData()
+        upload.append("file", file)
+        const uploadResponse = await fetch("/api/storage/upload", {
+          method: "POST",
+          body: upload,
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to store file locally")
+        }
+
+        const stored = await uploadResponse.json()
+
         const formData = new FormData()
-        formData.append('name', file.name)
-        formData.append('type', getFileType(file))
-        formData.append('fileName', file.name)
-        formData.append('fileSize', file.size.toString())
-        formData.append('mimeType', file.type)
-        formData.append('tags', JSON.stringify([]))
+        formData.append("name", file.name)
+        formData.append("type", getFileType(file))
+        formData.append("fileName", file.name)
+        formData.append("fileSize", file.size.toString())
+        formData.append("mimeType", file.type)
+        formData.append("fileUrl", stored.url)
+        formData.append("tags", JSON.stringify([]))
         
         const result = await createMaterial(notebookId, formData)
         if (result.success) {

@@ -11,7 +11,7 @@ export function FinalCTASection() {
             Ready to transform your learning?
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-primary-foreground/80">
-            Join thousands of learners who are already using NoteMaster to organize their knowledge and accelerate their learning.
+            Join thousands of learners who are already using A-notes to organize their knowledge and accelerate their learning.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Button asChild size="lg" variant="secondary">
@@ -29,3 +29,4 @@ export function FinalCTASection() {
     </div>
   )
 }
+

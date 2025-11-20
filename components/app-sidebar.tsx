@@ -55,7 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const data = {
     user: {
       name: "John Learner",
-      email: "john@notemaster.com",
+      email: "john@A-notes.com",
       avatar: "/placeholder.svg?height=32&width=32",
     },
     navMain: [
@@ -178,7 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
-                tooltip={state === "collapsed" ? "NoteMaster" : undefined}
+                tooltip={state === "collapsed" ? "A-notes" : undefined}
               >
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
                   <span className="text-sm font-bold">NM</span>
@@ -232,3 +232,4 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </>
   )
 }
+

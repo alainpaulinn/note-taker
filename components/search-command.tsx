@@ -32,7 +32,7 @@ export function SearchCommand() {
   return (
     <>
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search NoteMaster..." />
+        <CommandInput placeholder="Search A-notes..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Quick Actions">
@@ -91,3 +91,4 @@ export function SearchCommand() {
     </>
   )
 }
+

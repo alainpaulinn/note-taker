@@ -235,3 +235,35 @@ export async function reorderPages(notebookId: string, pageIds: string[]) {
     }
   }
 }
+
+export async function updatePageDrawing(id: string, drawingData: any) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect("/signin")
+  }
+
+  try {
+    const existing = await prisma.page.findFirst({
+      where: { id, userId: session.user.id },
+    })
+
+    if (!existing) {
+      throw new Error("Page not found")
+    }
+
+    await prisma.page.update({
+      where: {
+        id,
+      },
+      data: {
+        drawingData,
+        type: "drawing",
+      },
+    })
+    revalidatePath(`/app/notebooks/${existing.notebookId}`)
+    revalidatePath(`/app/notebooks/${existing.notebookId}/pages/${id}`)
+  } catch (error) {
+    console.error("Failed to save drawing", error)
+    throw error
+  }
+}

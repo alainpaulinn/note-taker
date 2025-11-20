@@ -2,8 +2,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const faqs = [
   {
-    question: "What makes NoteMaster different from other note-taking apps?",
-    answer: "NoteMaster combines rich text editing, visual diagramming, and file management in one seamless platform. Unlike other apps, you can create text notes, draw diagrams, and organize files all in the same notebook, making it perfect for comprehensive learning and research.",
+    question: "What makes A-notes different from other note-taking apps?",
+    answer: "A-notes combines rich text editing, visual diagramming, and file management in one seamless platform. Unlike other apps, you can create text notes, draw diagrams, and organize files all in the same notebook, making it perfect for comprehensive learning and research.",
   },
   {
     question: "Can I collaborate with others on my notebooks?",
@@ -26,12 +26,12 @@ const faqs = [
     answer: "You can upload PDFs, images (PNG, JPG, GIF, WebP), videos (MP4, WebM, MOV), documents (DOC, DOCX), presentations (PPT, PPTX), and text files. Free accounts have a 100MB limit per file, while Pro accounts can upload files up to 1GB.",
   },
   {
-    question: "Can I use NoteMaster offline?",
-    answer: "Yes! NoteMaster works offline on all platforms. Your notes sync automatically when you're back online, so you never lose your work.",
+    question: "Can I use A-notes offline?",
+    answer: "Yes! A-notes works offline on all platforms. Your notes sync automatically when you're back online, so you never lose your work.",
   },
   {
     question: "How does the drawing and diagramming work?",
-    answer: "NoteMaster includes a powerful drawing canvas powered by Excalidraw. You can create flowcharts, diagrams, sketches, and technical drawings. The drawing tools are integrated directly into your notebooks, so you can mix text and visual content seamlessly.",
+    answer: "A-notes includes a powerful drawing canvas powered by Excalidraw. You can create flowcharts, diagrams, sketches, and technical drawings. The drawing tools are integrated directly into your notebooks, so you can mix text and visual content seamlessly.",
   },
 ]
 
@@ -60,3 +60,4 @@ export function FAQSection() {
     </div>
   )
 }
+

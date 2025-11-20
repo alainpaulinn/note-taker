@@ -158,7 +158,7 @@ export default function FeaturesPage() {
             Everything you need for effective learning
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            NoteMaster combines the best of traditional note-taking with modern digital tools to help you learn more effectively.
+            A-notes combines the best of traditional note-taking with modern digital tools to help you learn more effectively.
           </p>
         </div>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
@@ -186,10 +186,11 @@ export default function FeaturesPage() {
         </div>
         <div className="mt-16 text-center">
           <Button asChild size="lg">
-            <Link href="/signup">Get started with NoteMaster</Link>
+            <Link href="/signup">Get started with A-notes</Link>
           </Button>
         </div>
       </div>
     </div>
   )
 }
+

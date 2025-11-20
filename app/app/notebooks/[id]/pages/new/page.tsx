@@ -8,17 +8,18 @@ import { ArrowLeft, FileText, PenTool, Layers } from "lucide-react"
 import Link from "next/link"
 
 interface NewPagePageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function NewPagePage({ params }: NewPagePageProps) {
+export default async function NewPagePage({ params }: NewPagePageProps) {
+  const { id } = await params
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/app/notebooks/${params.id}`}>
+          <Link href={`/app/notebooks/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebook
           </Link>
@@ -39,7 +40,7 @@ export default function NewPagePage({ params }: NewPagePageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={createPage.bind(null, params.id)} className="space-y-6">
+          <form action={createPage.bind(null, id)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -93,7 +94,7 @@ export default function NewPagePage({ params }: NewPagePageProps) {
                 Create Page
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link href={`/app/notebooks/${params.id}`}>
+                <Link href={`/app/notebooks/${id}`}>
                   Cancel
                 </Link>
               </Button>

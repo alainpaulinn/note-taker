@@ -6,20 +6,20 @@ import { Footer } from "@/components/footer"
 import { ClientProviders } from "@/components/ui/client-providers"
 
 export const metadata: Metadata = {
-  title: "NoteMaster - Your Personal Learning Companion",
-  description: "Organize your learning materials, take rich notes, and create visual diagrams with NoteMaster. The ultimate note-taking platform for students, professionals, and lifelong learners.",
+  title: "A-notes - Your Personal Learning Companion",
+  description: "Organize your learning materials, take rich notes, and create visual diagrams with A-notes. The ultimate note-taking platform for students, professionals, and lifelong learners.",
   keywords: ["note taking", "learning", "education", "study", "notes", "diagrams", "visual learning"],
-  authors: [{ name: "NoteMaster Team" }],
+  authors: [{ name: "A-notes Team" }],
   openGraph: {
-    title: "NoteMaster - Your Personal Learning Companion",
-    description: "Organize your learning materials, take rich notes, and create visual diagrams with NoteMaster.",
+    title: "A-notes - Your Personal Learning Companion",
+    description: "Organize your learning materials, take rich notes, and create visual diagrams with A-notes.",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NoteMaster - Your Personal Learning Companion",
-    description: "Organize your learning materials, take rich notes, and create visual diagrams with NoteMaster.",
+    title: "A-notes - Your Personal Learning Companion",
+    description: "Organize your learning materials, take rich notes, and create visual diagrams with A-notes.",
   },
 }
 

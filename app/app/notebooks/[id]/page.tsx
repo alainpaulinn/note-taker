@@ -18,13 +18,14 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 interface NotebookPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function NotebookPage({ params }: NotebookPageProps) {
-  const notebook = await getNotebook(params.id)
+  const { id } = await params
+  const notebook = await getNotebook(id)
 
   if (!notebook) {
     notFound()

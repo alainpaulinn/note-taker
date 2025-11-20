@@ -6,16 +6,18 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Edit, Share, Download, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { AISummaryPanel } from "@/components/ai-summary-panel"
 
 interface PageViewerProps {
-  params: {
+  params: Promise<{
     id: string
     pageId: string
-  }
+  }>
 }
 
 export default async function PageViewer({ params }: PageViewerProps) {
-  const page = await getPage(params.pageId)
+  const { id, pageId } = await params
+  const page = await getPage(pageId)
 
   if (!page) {
     notFound()
@@ -25,7 +27,7 @@ export default async function PageViewer({ params }: PageViewerProps) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/app/notebooks/${params.id}`}>
+          <Link href={`/app/notebooks/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebook
           </Link>
@@ -50,7 +52,7 @@ export default async function PageViewer({ params }: PageViewerProps) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href={`/app/notebooks/${params.id}/pages/${params.pageId}/edit`}>
+            <Link href={`/app/notebooks/${id}/pages/${pageId}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Link>
@@ -83,7 +85,7 @@ export default async function PageViewer({ params }: PageViewerProps) {
                   Drawing content will be displayed here
                 </div>
                 <Button asChild>
-                  <Link href={`/app/notebooks/${params.id}/pages/${params.pageId}/edit`}>
+                  <Link href={`/app/notebooks/${id}/pages/${pageId}/edit`}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edit Drawing
                   </Link>
@@ -97,6 +99,7 @@ export default async function PageViewer({ params }: PageViewerProps) {
           )}
         </CardContent>
       </Card>
+      <AISummaryPanel pageId={page.id} initialSummary={page.content?.slice(0, 200)} />
     </div>
   )
 }

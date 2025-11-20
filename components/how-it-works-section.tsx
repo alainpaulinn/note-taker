@@ -33,7 +33,7 @@ export function HowItWorksSection() {
             Get started in minutes
           </p>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            NoteMaster is designed to be intuitive and powerful. Here's how you can start organizing your learning today.
+            A-notes is designed to be intuitive and powerful. Here's how you can start organizing your learning today.
           </p>
         </div>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
@@ -64,3 +64,4 @@ export function HowItWorksSection() {
     </div>
   )
 }
+

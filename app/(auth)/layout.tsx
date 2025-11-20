@@ -5,8 +5,8 @@ import { AuthNavigation } from "@/components/auth-navigation"
 import { ClientProviders } from "@/components/ui/client-providers"
 
 export const metadata: Metadata = {
-  title: "Sign In - NoteMaster",
-  description: "Sign in to your NoteMaster account to access your learning materials.",
+  title: "Sign In - A-notes",
+  description: "Sign in to your A-notes account to access your learning materials.",
 }
 
 export default function AuthLayout({

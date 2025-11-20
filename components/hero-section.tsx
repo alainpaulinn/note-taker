@@ -32,7 +32,7 @@ export function HeroSection() {
             Your Personal Learning Companion
           </h1>
           <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Organize your learning materials, take rich notes, and create visual diagrams with NoteMaster. 
+            Organize your learning materials, take rich notes, and create visual diagrams with A-notes. 
             The ultimate note-taking platform for students, professionals, and lifelong learners.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
@@ -63,3 +63,4 @@ export function HeroSection() {
     </div>
   )
 }
+

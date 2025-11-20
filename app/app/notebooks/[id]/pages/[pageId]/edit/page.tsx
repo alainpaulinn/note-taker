@@ -1,5 +1,5 @@
 import { getPage, updatePage } from "@/app/actions/page"
-import { RichTextEditor } from "@/components/rich-text-editor"
+import { DualModeEditor } from "@/components/dual-mode-editor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,16 +8,18 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Save, Eye, Edit } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { DrawingCanvasEditor } from "@/components/drawing-canvas-editor"
 
 interface PageEditorProps {
-  params: {
+  params: Promise<{
     id: string
     pageId: string
-  }
+  }>
 }
 
 export default async function PageEditor({ params }: PageEditorProps) {
-  const page = await getPage(params.pageId)
+  const { id, pageId } = await params
+  const page = await getPage(pageId)
 
   if (!page) {
     notFound()
@@ -27,7 +29,7 @@ export default async function PageEditor({ params }: PageEditorProps) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/app/notebooks/${params.id}`}>
+          <Link href={`/app/notebooks/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Notebook
           </Link>
@@ -43,7 +45,7 @@ export default async function PageEditor({ params }: PageEditorProps) {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-              <Link href={`/app/notebooks/${params.id}/pages/${params.pageId}`}>
+            <Link href={`/app/notebooks/${id}/pages/${pageId}`}>
               <Eye className="mr-2 h-4 w-4" />
               View
             </Link>
@@ -56,21 +58,30 @@ export default async function PageEditor({ params }: PageEditorProps) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-4">
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Page Content</CardTitle>
               <CardDescription>
-                Edit your page content using the rich text editor
+                Swap between markdown and visual editing.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <RichTextEditor
-                content={page.content || ""}
-                placeholder="Start writing your notes..."
-              />
+              <DualModeEditor defaultContent={page.content || ""} />
             </CardContent>
           </Card>
+
+          {page.type !== "text" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Sketch & handwriting</CardTitle>
+                <CardDescription>Brainstorm spatially with an infinite canvas.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DrawingCanvasEditor pageId={page.id} initialData={page.drawingData} />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">

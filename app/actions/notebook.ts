@@ -164,6 +164,12 @@ export async function getNotebooks() {
         userId: session.user.id,
       },
       include: {
+        pages: {
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: 10,
+        },
         _count: {
           select: {
             pages: true,
