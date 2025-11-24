@@ -15,13 +15,22 @@ export function ThemeToggle({
   size = "sm", 
   className = "" 
 }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
+  const toggleTheme = () => {
+    const rootTheme =
+      typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light"
+    const currentTheme =
+      resolvedTheme ?? (theme === "dark" || theme === "light" ? theme : rootTheme)
+    setTheme(currentTheme === "dark" ? "light" : "dark")
+  }
 
   return (
     <Button
       variant={variant}
       size={size}
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={toggleTheme}
       className={`h-9 w-9 p-0 ${className}`}
     >
       <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

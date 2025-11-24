@@ -1,12 +1,16 @@
+"use client";
+
 import React, { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import { 
   MousePointer2, Square, Circle, Diamond, ArrowRight, Minus, 
-  Type, Pencil, Undo2, Redo2, Trash2, Download, Moon, Sun, 
+  Type, Pencil, Undo2, Redo2, Trash2, 
   ZoomIn, ZoomOut, Hand, Menu, X, GripVertical, Grid3x3, 
   LayoutGrid, Scan, Spline, Bold, Italic, Underline, 
   AlignLeft, AlignCenter, AlignRight, Type as TypeIcon,
   MousePointer, Hash, Slash, Contrast
 } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { useTheme } from 'next-themes';
 
 // --- Constants & Utilities ---
 
@@ -33,11 +37,35 @@ const FONT_FAMILIES = {
   3: 'monospace'              // Code
 };
 
+const DEFAULT_THEME_COLORS = {
+  light: {
+    background: '#ffffff',
+    foreground: '#0f172a',
+    card: '#ffffff',
+    border: '#e4e4e7',
+    muted: '#f4f4f5',
+    accent: '#f8fafc',
+    primary: '#0f172a',
+  },
+  dark: {
+    background: '#0b0f17',
+    foreground: '#f8fafc',
+    card: '#18181b',
+    border: '#3f3f46',
+    muted: '#27272a',
+    accent: '#1f1f23',
+    primary: '#f8fafc',
+  },
+};
+
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-const resolveColor = (color, isDarkMode) => {
-  if (color === 'neutral') {
-    return isDarkMode ? '#ffffff' : '#000000';
+const resolveColor = (color, themeColors) => {
+  if (color === 'transparent') {
+    return 'transparent';
+  }
+  if (color === 'neutral' || !color) {
+    return themeColors.foreground;
   }
   return color;
 };
@@ -219,10 +247,10 @@ const drawRoughLine = (ctx, x1, y1, x2, y2, color, width, roughness, roundness, 
   ctx.stroke();
 };
 
-const drawRoughFill = (ctx, element, isDarkMode, prng) => {
+const drawRoughFill = (ctx, element, themeColors, prng) => {
   if (element.fill === 'transparent') return;
   
-  const fill = resolveColor(element.fill, isDarkMode);
+  const fill = resolveColor(element.fill, themeColors);
   const { x, y, w, h } = getNormalizedBox(element);
   
   ctx.beginPath();
@@ -421,11 +449,13 @@ const drawArrowHead = (ctx, x1, y1, x2, y2, color, width, roughness, roundness, 
   drawRoughLine(ctx, x2, y2, px2, py2, color, width, roughness, 'sharp', prng);
 };
 
-const drawGrid = (ctx, width, height, scale, pan, type, isDark) => {
+const drawGrid = (ctx, width, height, scale, pan, type, isDark, themeColors) => {
   if (type === 'none') return;
   ctx.save();
-  ctx.strokeStyle = isDark ? '#333' : '#e5e7eb';
-  ctx.fillStyle = isDark ? '#444' : '#cbd5e1'; 
+  const strokeColor = themeColors.border || (isDark ? '#333' : '#e5e7eb');
+  const fillColor = themeColors.muted || (isDark ? '#444' : '#cbd5e1');
+  ctx.strokeStyle = strokeColor;
+  ctx.fillStyle = fillColor; 
   ctx.lineWidth = 1 / scale;
   const gridSize = 20;
   const startX = Math.floor(-pan.x / scale / gridSize) * gridSize;
@@ -448,7 +478,7 @@ const drawGrid = (ctx, width, height, scale, pan, type, isDark) => {
   ctx.restore();
 }
 
-const drawElementText = (ctx, element, isDarkMode) => {
+const drawElementText = (ctx, element, themeColors) => {
   if (!element.text) return;
   const { x, y, w, h } = getNormalizedBox(element);
   const cx = x + w / 2;
@@ -456,7 +486,7 @@ const drawElementText = (ctx, element, isDarkMode) => {
   
   ctx.save();
   ctx.font = `${element.fontStyle || 'normal'} ${element.fontWeight || 'normal'} ${element.fontSize || 24}px ${FONT_FAMILIES[element.fontFamily || 1]}`;
-  ctx.fillStyle = resolveColor(element.stroke, isDarkMode);
+  ctx.fillStyle = resolveColor(element.stroke, themeColors);
   ctx.textAlign = element.textAlign || 'center';
   ctx.textBaseline = 'top'; 
 
@@ -514,6 +544,17 @@ const drawElementText = (ctx, element, isDarkMode) => {
 
 export default function ExcalidrawClone() {
   const canvasRef = useRef(null);
+  const { theme, resolvedTheme } = useTheme();
+  const currentTheme = useMemo(() => {
+    if (resolvedTheme) return resolvedTheme;
+    if (theme === 'dark' || theme === 'light') return theme;
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+    return 'light';
+  }, [theme, resolvedTheme]);
+  const isDarkMode = currentTheme === 'dark';
+  const [themeColors, setThemeColors] = useState(() => DEFAULT_THEME_COLORS[isDarkMode ? 'dark' : 'light']);
   const [elements, setElements] = useState([]);
   const [history, setHistory] = useState([[]]);
   const [historyStep, setHistoryStep] = useState(0);
@@ -527,7 +568,6 @@ export default function ExcalidrawClone() {
   const elementSnapshot = useRef(null);
   const [scale, setScale] = useState(1);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [gridType, setGridType] = useState('none');
   const [hideSystemCursor, setHideSystemCursor] = useState(false); 
   const [hoverCursor, setHoverCursor] = useState(null);
@@ -563,6 +603,30 @@ export default function ExcalidrawClone() {
     document.head.appendChild(link);
     return () => document.head.removeChild(link);
   }, []);
+
+  useEffect(() => {
+    const mode = isDarkMode ? 'dark' : 'light';
+    if (typeof window === 'undefined') {
+      setThemeColors(DEFAULT_THEME_COLORS[mode]);
+      return;
+    }
+
+    const styles = getComputedStyle(document.documentElement);
+    const readColor = (variable, fallback) => {
+      const value = styles.getPropertyValue(variable)?.trim();
+      return value ? `hsl(${value})` : fallback;
+    };
+
+    setThemeColors({
+      background: readColor('--background', DEFAULT_THEME_COLORS[mode].background),
+      foreground: readColor('--foreground', DEFAULT_THEME_COLORS[mode].foreground),
+      card: readColor('--card', DEFAULT_THEME_COLORS[mode].card),
+      border: readColor('--border', DEFAULT_THEME_COLORS[mode].border),
+      muted: readColor('--muted', DEFAULT_THEME_COLORS[mode].muted),
+      accent: readColor('--accent', DEFAULT_THEME_COLORS[mode].accent),
+      primary: readColor('--primary', DEFAULT_THEME_COLORS[mode].primary),
+    });
+  }, [isDarkMode]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -601,19 +665,19 @@ export default function ExcalidrawClone() {
     const ctx = canvas.getContext('2d');
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = isDarkMode ? '#121212' : '#ffffff';
+    ctx.fillStyle = themeColors.background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(panOffset.x, panOffset.y);
     ctx.scale(scale, scale);
 
-    drawGrid(ctx, canvas.width, canvas.height, scale, panOffset, gridType, isDarkMode);
+    drawGrid(ctx, canvas.width, canvas.height, scale, panOffset, gridType, isDarkMode, themeColors);
 
     elements.forEach(element => {
       if (selectedElement?.id === element.id && action !== 'writing') {
         ctx.save();
-        ctx.strokeStyle = '#3b82f6';
+        ctx.strokeStyle = themeColors.primary;
         ctx.lineWidth = 1 / scale;
         const padding = 4;
         const { x, y, w, h } = getNormalizedBox(element);
@@ -626,8 +690,8 @@ export default function ExcalidrawClone() {
         // Draw 8 Handles
         const handleSize = 8 / scale;
         const handles = getResizeHandles(element);
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#3b82f6';
+        ctx.fillStyle = themeColors.card;
+        ctx.strokeStyle = themeColors.primary;
         handles.forEach(handle => {
              ctx.fillRect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize);
              ctx.strokeRect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize);
@@ -641,8 +705,8 @@ export default function ExcalidrawClone() {
       const fillPrng = createPRNG(seed);
       const strokePrng = createPRNG(seed + 1);
 
-      drawRoughFill(ctx, element, isDarkMode, fillPrng);
-      const stroke = resolveColor(element.stroke, isDarkMode);
+      drawRoughFill(ctx, element, themeColors, fillPrng);
+      const stroke = resolveColor(element.stroke, themeColors);
 
       // Common points for Lines/Arrows (adjusted for binding)
       let finalX1 = element.x;
@@ -683,11 +747,11 @@ export default function ExcalidrawClone() {
           break;
       }
       if (!(action === 'writing' && selectedElement?.id === element.id)) {
-        drawElementText(ctx, element, isDarkMode);
+        drawElementText(ctx, element, themeColors);
       }
     });
     ctx.restore();
-  }, [elements, panOffset, scale, selectedElement, gridType, isDarkMode, action]);
+  }, [elements, panOffset, scale, selectedElement, gridType, isDarkMode, action, themeColors]);
 
   const updateElements = (newElements, saveHistory = true) => {
     setElements(newElements);
@@ -1130,7 +1194,11 @@ export default function ExcalidrawClone() {
   };
 
   const ToolButton = ({ t, icon: Icon, label }) => (
-    <button title={label} onClick={() => setTool(t)} className={`p-2 rounded-lg transition-all ${tool === t ? 'bg-violet-100 text-violet-900 shadow-inner' : 'hover:bg-gray-100 text-gray-600'}`}>
+    <button
+      title={label}
+      onClick={() => setTool(t)}
+      className={`p-2 rounded-lg transition-all ${tool === t ? 'bg-primary/10 text-primary shadow-inner' : 'text-muted-foreground hover:bg-muted/80'}`}
+    >
       <Icon size={20} />
     </button>
   );
@@ -1167,10 +1235,10 @@ export default function ExcalidrawClone() {
           fontWeight: selectedElement.fontWeight || 'normal',
           fontStyle: selectedElement.fontStyle || 'normal',
           textDecoration: selectedElement.textDecoration || 'none',
-          color: resolveColor(selectedElement.stroke, isDarkMode),
+          color: resolveColor(selectedElement.stroke, themeColors),
           background: 'transparent',
           border: 'none',
-          outline: '2px solid #3b82f6',
+          outline: `2px solid ${themeColors.primary}`,
           textAlign: textAlign,
           resize: 'none',
           overflow: 'hidden',
@@ -1183,12 +1251,12 @@ export default function ExcalidrawClone() {
   };
 
   return (
-    <div className={`w-full relative h-screen overflow-hidden flex flex-col ${isDarkMode ? 'bg-[#121212] text-gray-200' : 'bg-gray-50 text-gray-800'}`}>
+    <div className="w-full relative h-screen overflow-hidden flex flex-col bg-background text-foreground">
       
       {/* Toolbar */}
-      <div className={`absolute top-16 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-1 p-1.5 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border ${isDarkMode ? 'bg-[#232323] border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-1 p-1.5 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border bg-card border-border">
         <ToolButton t={TOOLS.SELECTION} icon={MousePointer2} label="Selection (1)" />
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+        <div className="w-px h-6 bg-border mx-1"></div>
         <ToolButton t={TOOLS.RECTANGLE} icon={Square} label="Rectangle (2)" />
         <ToolButton t={TOOLS.DIAMOND} icon={Diamond} label="Diamond (3)" />
         <ToolButton t={TOOLS.ELLIPSE} icon={Circle} label="Ellipse (4)" />
@@ -1196,103 +1264,103 @@ export default function ExcalidrawClone() {
         <ToolButton t={TOOLS.LINE} icon={Minus} label="Line (6)" />
         <ToolButton t={TOOLS.FREE_DRAW} icon={Pencil} label="Draw (7)" />
         <ToolButton t={TOOLS.TEXT} icon={TypeIcon} label="Text (8)" />
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+        <div className="w-px h-6 bg-border mx-1"></div>
         <ToolButton t={TOOLS.PAN} icon={Hand} label="Pan (Space)" />
       </div>
 
       {/* Properties Panel */}
       {(selectedElement || tool !== TOOLS.SELECTION) && (
-        <div className={`absolute top-20 left-4 z-20 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border w-64 max-h-[80vh] overflow-y-auto ${isDarkMode ? 'bg-[#232323] border-gray-700' : 'bg-white border-gray-200'}`}>
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 text-gray-400">Stroke</h3>
+        <div className="absolute top-20 left-4 z-20 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border w-64 max-h-[80vh] overflow-y-auto bg-card border-border">
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 text-muted-foreground">Stroke</h3>
           <div className="grid grid-cols-5 gap-1 mt-2">
             {PALETTE.stroke.map(c => (
               <button 
                 key={c} 
                 onClick={() => updateProperty('stroke', c)} 
-                className={`w-6 h-6 rounded-md border border-gray-200 overflow-hidden flex items-center justify-center ${strokeColor === c ? 'ring-2 ring-violet-600' : ''}`} 
-                style={{ backgroundColor: c === 'neutral' ? (isDarkMode ? '#ffffff' : '#000000') : c }}
+                className={`w-6 h-6 rounded-md border border-border overflow-hidden flex items-center justify-center ${strokeColor === c ? 'ring-2 ring-primary' : ''}`} 
+                style={{ backgroundColor: c === 'neutral' ? themeColors.foreground : c }}
                 title={c === 'neutral' ? 'Adaptive (Theme)' : c}
               >
-                  {c === 'neutral' && <Contrast size={14} className="text-gray-400 mix-blend-difference" />}
+                  {c === 'neutral' && <Contrast size={14} className="text-muted-foreground mix-blend-difference" />}
               </button>
             ))}
           </div>
           
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-gray-400">Background</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-muted-foreground">Background</h3>
           <div className="grid grid-cols-5 gap-1 mt-2">
             {PALETTE.background.map(c => (
               <button 
                 key={c} 
                 onClick={() => updateProperty('fill', c)} 
-                className={`w-6 h-6 rounded-md border border-gray-200 flex items-center justify-center ${backgroundColor === c ? 'ring-2 ring-violet-600' : ''}`} 
-                style={{ backgroundColor: c === 'neutral' ? (isDarkMode ? '#ffffff' : '#000000') : (c === 'transparent' ? 'transparent' : c) }}
+                className={`w-6 h-6 rounded-md border border-border flex items-center justify-center ${backgroundColor === c ? 'ring-2 ring-primary' : ''}`} 
+                style={{ backgroundColor: c === 'neutral' ? themeColors.foreground : (c === 'transparent' ? 'transparent' : c) }}
                 title={c === 'neutral' ? 'Adaptive (Theme)' : c}
               >
                 {c === 'transparent' && <span className="block w-full h-[1px] bg-red-500 rotate-45 transform translate-y-2.5"></span>}
-                {c === 'neutral' && <Contrast size={14} className="text-gray-400 mix-blend-difference" />}
+                {c === 'neutral' && <Contrast size={14} className="text-muted-foreground mix-blend-difference" />}
               </button>
             ))}
           </div>
 
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-gray-400">Fill</h3>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-               <button onClick={() => updateProperty('fillStyle', 'hachure')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${fillStyle === 'hachure' ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`} title="Hachure"><Slash size={16} /></button>
-               <button onClick={() => updateProperty('fillStyle', 'cross-hatch')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${fillStyle === 'cross-hatch' ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`} title="Cross-Hatch"><Grid3x3 size={16} /></button>
-               <button onClick={() => updateProperty('fillStyle', 'solid')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${fillStyle === 'solid' ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`} title="Solid"><Square size={16} fill="currentColor" /></button>
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-muted-foreground">Fill</h3>
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
+               <button onClick={() => updateProperty('fillStyle', 'hachure')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${fillStyle === 'hachure' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`} title="Hachure"><Slash size={16} /></button>
+               <button onClick={() => updateProperty('fillStyle', 'cross-hatch')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${fillStyle === 'cross-hatch' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`} title="Cross-Hatch"><Grid3x3 size={16} /></button>
+               <button onClick={() => updateProperty('fillStyle', 'solid')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${fillStyle === 'solid' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`} title="Solid"><Square size={16} fill="currentColor" /></button>
           </div>
 
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-gray-400">Typography</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-muted-foreground">Typography</h3>
           <div className="flex flex-col gap-2">
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                  <button onClick={() => updateProperty('fontFamily', 1)} className={`flex-1 py-1 text-sm rounded ${fontFamily === 1 ? 'bg-white shadow' : ''}`} style={{ fontFamily: '"Caveat", cursive' }}>A</button>
-                  <button onClick={() => updateProperty('fontFamily', 2)} className={`flex-1 py-1 text-sm rounded ${fontFamily === 2 ? 'bg-white shadow' : ''}`} style={{ fontFamily: 'sans-serif' }}>A</button>
-                  <button onClick={() => updateProperty('fontFamily', 3)} className={`flex-1 py-1 text-sm rounded ${fontFamily === 3 ? 'bg-white shadow' : ''}`} style={{ fontFamily: 'monospace' }}>A</button>
+              <div className="flex gap-1 bg-muted rounded-lg p-1">
+                  <button onClick={() => updateProperty('fontFamily', 1)} className={`flex-1 py-1 text-sm rounded ${fontFamily === 1 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`} style={{ fontFamily: '"Caveat", cursive' }}>A</button>
+                  <button onClick={() => updateProperty('fontFamily', 2)} className={`flex-1 py-1 text-sm rounded ${fontFamily === 2 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`} style={{ fontFamily: 'sans-serif' }}>A</button>
+                  <button onClick={() => updateProperty('fontFamily', 3)} className={`flex-1 py-1 text-sm rounded ${fontFamily === 3 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`} style={{ fontFamily: 'monospace' }}>A</button>
               </div>
               
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                  <button onClick={() => updateProperty('fontSize', 16)} className={`flex-1 py-1 text-xs rounded ${fontSize === 16 ? 'bg-white shadow' : ''}`}>S</button>
-                  <button onClick={() => updateProperty('fontSize', 24)} className={`flex-1 py-1 text-sm rounded ${fontSize === 24 ? 'bg-white shadow' : ''}`}>M</button>
-                  <button onClick={() => updateProperty('fontSize', 36)} className={`flex-1 py-1 text-lg rounded ${fontSize === 36 ? 'bg-white shadow' : ''}`}>L</button>
-                  <button onClick={() => updateProperty('fontSize', 48)} className={`flex-1 py-1 text-xl rounded ${fontSize === 48 ? 'bg-white shadow' : ''}`}>XL</button>
+              <div className="flex gap-1 bg-muted rounded-lg p-1">
+                  <button onClick={() => updateProperty('fontSize', 16)} className={`flex-1 py-1 text-xs rounded ${fontSize === 16 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>S</button>
+                  <button onClick={() => updateProperty('fontSize', 24)} className={`flex-1 py-1 text-sm rounded ${fontSize === 24 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>M</button>
+                  <button onClick={() => updateProperty('fontSize', 36)} className={`flex-1 py-1 text-lg rounded ${fontSize === 36 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>L</button>
+                  <button onClick={() => updateProperty('fontSize', 48)} className={`flex-1 py-1 text-xl rounded ${fontSize === 48 ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>XL</button>
               </div>
 
               <div className="flex gap-1 mt-1">
-                  <button onClick={() => updateProperty('textAlign', 'left')} className={`p-2 rounded hover:bg-gray-100 ${textAlign === 'left' ? 'bg-gray-200' : ''}`}><AlignLeft size={16}/></button>
-                  <button onClick={() => updateProperty('textAlign', 'center')} className={`p-2 rounded hover:bg-gray-100 ${textAlign === 'center' ? 'bg-gray-200' : ''}`}><AlignCenter size={16}/></button>
-                  <button onClick={() => updateProperty('textAlign', 'right')} className={`p-2 rounded hover:bg-gray-100 ${textAlign === 'right' ? 'bg-gray-200' : ''}`}><AlignRight size={16}/></button>
-                  <div className="w-px bg-gray-300 mx-1"></div>
-                  <button onClick={() => updateProperty('fontWeight', fontWeight === 'bold' ? 'normal' : 'bold')} className={`p-2 rounded hover:bg-gray-100 ${fontWeight === 'bold' ? 'bg-gray-200' : ''}`}><Bold size={16}/></button>
-                  <button onClick={() => updateProperty('fontStyle', fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-2 rounded hover:bg-gray-100 ${fontStyle === 'italic' ? 'bg-gray-200' : ''}`}><Italic size={16}/></button>
-                  <button onClick={() => updateProperty('textDecoration', textDecoration === 'underline' ? 'none' : 'underline')} className={`p-2 rounded hover:bg-gray-100 ${textDecoration === 'underline' ? 'bg-gray-200' : ''}`}><Underline size={16}/></button>
+                  <button onClick={() => updateProperty('textAlign', 'left')} className={`p-2 rounded hover:bg-muted/70 ${textAlign === 'left' ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}><AlignLeft size={16}/></button>
+                  <button onClick={() => updateProperty('textAlign', 'center')} className={`p-2 rounded hover:bg-muted/70 ${textAlign === 'center' ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}><AlignCenter size={16}/></button>
+                  <button onClick={() => updateProperty('textAlign', 'right')} className={`p-2 rounded hover:bg-muted/70 ${textAlign === 'right' ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}><AlignRight size={16}/></button>
+                  <div className="w-px bg-border mx-1"></div>
+                  <button onClick={() => updateProperty('fontWeight', fontWeight === 'bold' ? 'normal' : 'bold')} className={`p-2 rounded hover:bg-muted/70 ${fontWeight === 'bold' ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}><Bold size={16}/></button>
+                  <button onClick={() => updateProperty('fontStyle', fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-2 rounded hover:bg-muted/70 ${fontStyle === 'italic' ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}><Italic size={16}/></button>
+                  <button onClick={() => updateProperty('textDecoration', textDecoration === 'underline' ? 'none' : 'underline')} className={`p-2 rounded hover:bg-muted/70 ${textDecoration === 'underline' ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}><Underline size={16}/></button>
               </div>
           </div>
 
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-gray-400">Style</h3>
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1 mb-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 mt-6 text-muted-foreground">Style</h3>
+          <div className="flex gap-2 bg-muted rounded-lg p-1 mb-2">
              {[1, 2, 4].map(w => (
-                 <button key={w} onClick={() => updateProperty('width', w)} className={`flex-1 h-8 rounded-md flex items-center justify-center ${strokeWidth === w ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`}>
+                 <button key={w} onClick={() => updateProperty('width', w)} className={`flex-1 h-8 rounded-md flex items-center justify-center ${strokeWidth === w ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>
                      <div className="bg-current rounded-full" style={{ height: w, width: 20 }}></div>
                  </button>
              ))}
           </div>
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-2 bg-muted rounded-lg p-1">
              {[0, 1, 2].map(r => (
-                 <button key={r} onClick={() => updateProperty('roughness', r)} className={`flex-1 h-8 rounded-md flex items-center justify-center ${roughness === r ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`}>
+                 <button key={r} onClick={() => updateProperty('roughness', r)} className={`flex-1 h-8 rounded-md flex items-center justify-center ${roughness === r ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}>
                      {r === 0 ? <Minus size={16} /> : r === 1 ? <div className="font-serif italic">~</div> : <div className="font-serif italic font-bold">~~</div>}
                  </button>
              ))}
           </div>
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1 mt-2">
-             <button onClick={() => updateProperty('roundness', 'sharp')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${roundness === 'sharp' ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`}><Scan size={16} /></button>
-             <button onClick={() => updateProperty('roundness', 'round')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${roundness === 'round' ? 'bg-white shadow text-violet-600' : 'text-gray-500'}`}><Spline size={16} /></button>
+          <div className="flex gap-2 bg-muted rounded-lg p-1 mt-2">
+             <button onClick={() => updateProperty('roundness', 'sharp')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${roundness === 'sharp' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}><Scan size={16} /></button>
+             <button onClick={() => updateProperty('roundness', 'round')} className={`flex-1 h-8 rounded-md flex items-center justify-center ${roundness === 'round' ? 'bg-card shadow text-primary' : 'text-muted-foreground'}`}><Spline size={16} /></button>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-gray-100 flex gap-2">
+          <div className="mt-6 pt-4 border-t border-border flex gap-2">
              <button onClick={() => {
                 const updated = elements.filter(el => el.id !== selectedElement?.id);
                 updateElements(updated);
                 setSelectedElement(null);
-             }} className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium">
+             }} className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 text-sm font-medium">
                 <Trash2 size={16} /> Delete
              </button>
           </div>
@@ -1333,33 +1401,32 @@ export default function ExcalidrawClone() {
 
       {/* Bottom Controls */}
       <div className="absolute bottom-4 left-4 flex gap-2 z-20">
-          <div className={`flex items-center gap-1 p-1 rounded-lg shadow-lg border ${isDarkMode ? 'bg-[#232323] border-gray-700' : 'bg-white border-gray-200'}`}>
-             <button onClick={() => setScale(s => Math.max(s - 0.1, 0.1))} className="p-2 hover:bg-gray-100 rounded-md"><ZoomOut size={16}/></button>
+          <div className="flex items-center gap-1 p-1 rounded-lg shadow-lg border bg-card border-border">
+             <button onClick={() => setScale(s => Math.max(s - 0.1, 0.1))} className="p-2 rounded-md text-muted-foreground hover:bg-muted/70"><ZoomOut size={16}/></button>
              <span className="text-xs w-12 text-center font-mono">{(scale * 100).toFixed(0)}%</span>
-             <button onClick={() => setScale(s => Math.min(s + 0.1, 5))} className="p-2 hover:bg-gray-100 rounded-md"><ZoomIn size={16}/></button>
+             <button onClick={() => setScale(s => Math.min(s + 0.1, 5))} className="p-2 rounded-md text-muted-foreground hover:bg-muted/70"><ZoomIn size={16}/></button>
           </div>
-          <div className={`flex items-center gap-1 p-1 rounded-lg shadow-lg border ${isDarkMode ? 'bg-[#232323] border-gray-700' : 'bg-white border-gray-200'}`}>
-             <button onClick={undo} className="p-2 hover:bg-gray-100 rounded-md disabled:opacity-30" disabled={historyStep <= 0}><Undo2 size={16}/></button>
-             <button onClick={redo} className="p-2 hover:bg-gray-100 rounded-md disabled:opacity-30" disabled={historyStep >= history.length - 1}><Redo2 size={16}/></button>
+          <div className="flex items-center gap-1 p-1 rounded-lg shadow-lg border bg-card border-border">
+             <button onClick={undo} className="p-2 rounded-md text-muted-foreground hover:bg-muted/70 disabled:opacity-30" disabled={historyStep <= 0}><Undo2 size={16}/></button>
+             <button onClick={redo} className="p-2 rounded-md text-muted-foreground hover:bg-muted/70 disabled:opacity-30" disabled={historyStep >= history.length - 1}><Redo2 size={16}/></button>
           </div>
       </div>
 
       {/* Menu Controls */}
       <div className="absolute bottom-4 right-4 flex gap-2 z-20">
-         <div className={`flex items-center gap-1 p-1 rounded-lg shadow-lg border mr-2 ${isDarkMode ? 'bg-[#232323] border-gray-700' : 'bg-white border-gray-200'}`}>
-            <button onClick={() => setGridType('none')} className={`p-2 rounded-md ${gridType === 'none' ? 'bg-violet-100 text-violet-900' : 'hover:bg-gray-100 text-gray-500'}`}><Square size={16}/></button>
-            <button onClick={() => setGridType('dot')} className={`p-2 rounded-md ${gridType === 'dot' ? 'bg-violet-100 text-violet-900' : 'hover:bg-gray-100 text-gray-500'}`}><LayoutGrid size={16}/></button>
-            <button onClick={() => setGridType('line')} className={`p-2 rounded-md ${gridType === 'line' ? 'bg-violet-100 text-violet-900' : 'hover:bg-gray-100 text-gray-500'}`}><Grid3x3 size={16}/></button>
-            <div className="w-px h-4 bg-gray-300 mx-1"></div>
-            <button onClick={() => setHideSystemCursor(!hideSystemCursor)} className={`p-2 rounded-md ${hideSystemCursor ? 'bg-violet-100 text-violet-900' : 'hover:bg-gray-100 text-gray-500'}`} title="Toggle System Cursor"><MousePointer size={16}/></button>
+         <div className="flex items-center gap-1 p-1 rounded-lg shadow-lg border mr-2 bg-card border-border">
+            <button onClick={() => setGridType('none')} className={`p-2 rounded-md ${gridType === 'none' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/70'}`}><Square size={16}/></button>
+            <button onClick={() => setGridType('dot')} className={`p-2 rounded-md ${gridType === 'dot' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/70'}`}><LayoutGrid size={16}/></button>
+            <button onClick={() => setGridType('line')} className={`p-2 rounded-md ${gridType === 'line' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/70'}`}><Grid3x3 size={16}/></button>
+            <div className="w-px h-4 bg-border mx-1"></div>
+            <button onClick={() => setHideSystemCursor(!hideSystemCursor)} className={`p-2 rounded-md ${hideSystemCursor ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/70'}`} title="Toggle System Cursor"><MousePointer size={16}/></button>
          </div>
-         <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-3 rounded-full shadow-lg border transition-colors ${isDarkMode ? 'bg-white text-black' : 'bg-gray-800 text-white border-gray-800'}`}>
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-         </button>
-         <button className={`p-3 rounded-full shadow-lg border transition-colors ${isDarkMode ? 'bg-[#232323] border-gray-700 text-white' : 'bg-violet-600 text-white border-violet-600'}`}>
+         <ThemeToggle variant="outline" size="icon" className="rounded-full shadow-lg border border-border bg-card text-foreground" />
+         <button className="p-3 rounded-full shadow-lg border transition-colors bg-primary text-primary-foreground border-primary">
             <Menu size={20} />
          </button>
       </div>
     </div>
   );
 }
+
