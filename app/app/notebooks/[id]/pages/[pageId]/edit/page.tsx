@@ -1,14 +1,10 @@
-import { getPage, updatePage } from "@/app/actions/page"
-import { DualModeEditor } from "@/components/dual-mode-editor"
+import { getPage } from "@/app/actions/page"
+import { UnifiedNoteSurface } from "@/components/unified-note-surface"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Save, Eye, Edit } from "lucide-react"
+import { ArrowLeft, Eye } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { DrawingCanvasEditor } from "@/components/drawing-canvas-editor"
+import { PageHeader } from "@/components/site-header"
 
 interface PageEditorProps {
   params: Promise<{
@@ -26,120 +22,37 @@ export default async function PageEditor({ params }: PageEditorProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/app/notebooks/${id}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Notebook
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{page.title}</h1>
-          <div className="flex items-center gap-4 mt-2">
-            <Badge variant="secondary">{page.type}</Badge>
-            <span className="text-sm text-muted-foreground">
-              Updated {new Date(page.updatedAt).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-            <Button variant="outline" asChild>
-            <Link href={`/app/notebooks/${id}/pages/${pageId}`}>
-              <Eye className="mr-2 h-4 w-4" />
-              View
-            </Link>
-          </Button>
-          <Button>
-            <Save className="mr-2 h-4 w-4" />
-            Save
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-4">
-        <div className="lg:col-span-3 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Page Content</CardTitle>
-              <CardDescription>
-                Swap between markdown and visual editing.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DualModeEditor defaultContent={page.content || ""} />
-            </CardContent>
-          </Card>
-
-          {page.type !== "text" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Sketch & handwriting</CardTitle>
-                <CardDescription>Brainstorm spatially with an infinite canvas.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DrawingCanvasEditor pageId={page.id} initialData={page.drawingData} />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Page Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  defaultValue={page.title}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags</Label>
-                <div className="flex flex-wrap gap-2">
-                  {page.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                <Input
-                  placeholder="Add tags..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Page Type</Label>
-                <div className="text-sm text-muted-foreground">
-                  {page.type === "text" && "Text Page"}
-                  {page.type === "drawing" && "Drawing Page"}
-                  {page.type === "mixed" && "Mixed Content Page"}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Edit className="mr-2 h-4 w-4" />
-                Duplicate Page
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
+    <>
+      <PageHeader
+        title={page.title}
+        description={`Updated ${new Date(page.updatedAt).toLocaleString()}`}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/app/notebooks/${id}`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Move to Another Notebook
-              </Button>
-            </CardContent>
-          </Card>
+                Back
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/app/notebooks/${id}/pages/${pageId}`}>
+                <Eye className="mr-2 h-4 w-4" />
+                View
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+      <div className="relative min-h-[calc(100vh-2rem)] overflow-hidden rounded-3xl border border-border/50 bg-[radial-gradient(circle,_rgba(226,232,240,0.6)_1px,_transparent_1px)] bg-[length:20px_20px]">
+        <div className="absolute inset-0 bg-gradient-to-br from-background/60 via-background/40 to-background/80" />
+        <div className="relative h-full">
+          <UnifiedNoteSurface
+            pageId={page.id}
+            initialContent={page.content || ""}
+            initialDrawing={page.drawingData}
+          />
         </div>
       </div>
-    </div>
+    </>
   )
 }

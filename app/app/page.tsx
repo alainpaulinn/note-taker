@@ -15,7 +15,7 @@ export default async function AppPage() {
 
   return (
     <>
-      <PageHeader 
+      {/* <PageHeader 
         title="Mission control"
         description="One timeline for study plans, meeting notes, and ideation canvases."
         actions={
@@ -26,7 +26,7 @@ export default async function AppPage() {
             </Link>
           </Button>
         }
-      />
+      /> */}
       <div className="flex flex-col gap-8">
         <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/15 via-background to-background p-6 shadow-[0_0_60px_rgba(108,99,255,0.15)]">
           <div className="flex flex-wrap items-center justify-between gap-4">

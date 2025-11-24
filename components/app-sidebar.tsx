@@ -19,6 +19,9 @@ import {
   PenTool,
   Shield,
   Building2,
+  Sparkles,
+  CalendarClock,
+  Target,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -27,7 +30,7 @@ import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { SearchCommand } from "@/components/search-command"
 import { NotebookSelector } from "@/components/notebook-selector"
-import { useNotebook } from "@/components/notebook-context"
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -41,16 +44,17 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-import { useSession } from "next-auth/react"
 import { useUserPermissions, useIsSuperAdmin } from "@/hooks/use-rbac"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar()
-  const { selectedNotebook } = useNotebook()
-  const [searchOpen, setSearchOpen] = React.useState(false)
-  const { data: session } = useSession()
+  const isCollapsed = state === "collapsed"
   const { permissions, loading: permissionsLoading } = useUserPermissions()
   const { isSuperAdmin, loading: superAdminLoading } = useIsSuperAdmin()
+
+  const openCommandPalette = React.useCallback(() => {
+    window.dispatchEvent(new CustomEvent("open-command-palette"))
+  }, [])
 
   const data = {
     user: {
@@ -145,9 +149,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: LifeBuoy,
       },
       {
-        title: "Search",
+        title: "Command Palette",
         url: "#",
         icon: Search,
+        onClick: openCommandPalette,
       },
     ],
     documents: [
@@ -167,6 +172,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: Download,
       },
     ],
+    workflows: [
+      {
+        title: "Meeting notes",
+        description: "Agenda + decisions template",
+        icon: Users,
+        url: "/app/templates?filter=meetings",
+      },
+      {
+        title: "Daily study plan",
+        description: "Time-boxed schedule",
+        icon: CalendarClock,
+        url: "/app/templates?filter=daily",
+      },
+      {
+        title: "Idea garden",
+        description: "Unstructured brainstorming",
+        icon: Sparkles,
+        url: "/app/notebooks?view=ideas",
+      },
+    ],
+    collections: [
+      {
+        title: "Today",
+        count: 4,
+        url: "/app/notebooks?filter=today",
+      },
+      {
+        title: "Pinned",
+        count: 8,
+        url: "/app/notebooks?filter=pinned",
+      },
+      {
+        title: "Shared with me",
+        count: 12,
+        url: "/app/notebooks?filter=shared",
+      },
+    ],
   }
 
   return (
@@ -181,23 +223,65 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 tooltip={state === "collapsed" ? "A-notes" : undefined}
               >
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
-                  <span className="text-sm font-bold">NM</span>
+                  <span className="text-sm font-bold">AN</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <div className="text-xl font-bold hover:opacity-80 transition-opacity">
-                    <span className="text-foreground">Note</span>
-                    <span className="text-blue-600 dark:text-blue-400">Master</span>
+                    <span className="text-foreground">A</span>
+                    <span className="text-blue-600 dark:text-blue-400">-notes</span>
                   </div>
-                  <span className="truncate text-xs">Learning Platform</span>
+                  <span className="truncate text-xs text-muted-foreground">Ideas in one orbit</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
-        <SidebarContent className="overflow-y-auto overflow-x-hidden">
-          <SidebarFooter>
-            <NotebookSelector />
-          </SidebarFooter>
+        <SidebarContent className="overflow-y-auto overflow-x-hidden space-y-4 px-3">
+          {!isCollapsed && (
+            <div className="space-y-3">
+              <NotebookSelector />
+              <div className="rounded-2xl border border-border/40 bg-muted/10 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Quick start</p>
+                    <p className="text-sm font-semibold">Capture instantly</p>
+                  </div>
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" className="flex-1">
+                    <Link href="/app/notebooks/new">New notebook</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="flex-1">
+                    <Link href="/app/notebooks">Browse notes</Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full" onClick={openCommandPalette}>
+                    Launch command (⌘K)
+                  </Button>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-border/30 bg-background/80 p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Next up</p>
+                    <p className="font-semibold">Strategy sync</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · 30 min block
+                    </p>
+                  </div>
+                  <Target className="h-4 w-4 text-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Jump back into <span className="font-medium">Product Decisions</span> notebook.
+                </p>
+              </div>
+            </div>
+          )}
+          {isCollapsed && (
+            <div className="px-1">
+              <NotebookSelector />
+            </div>
+          )}
           <NavMain items={data.navMain} />
           {!permissionsLoading && !superAdminLoading && data.navAdmin.length > 0 && (
             <SidebarGroup>
@@ -216,11 +300,48 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenu>
             </SidebarGroup>
           )}
+          {!isCollapsed && (
+            <>
+              <SidebarGroup>
+                <SidebarGroupLabel>Workflows</SidebarGroupLabel>
+                <SidebarMenu>
+                  {data.workflows.map((flow) => (
+                    <SidebarMenuItem key={flow.title}>
+                      <SidebarMenuButton asChild tooltip={flow.title}>
+                        <Link href={flow.url}>
+                          <flow.icon className="text-muted-foreground" />
+                          <div className="flex flex-col text-left">
+                            <span>{flow.title}</span>
+                            <span className="text-xs text-muted-foreground">{flow.description}</span>
+                          </div>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+              <SidebarGroup>
+                <SidebarGroupLabel>Collections</SidebarGroupLabel>
+                <SidebarMenu>
+                  {data.collections.map((collection) => (
+                    <SidebarMenuItem key={collection.title}>
+                      <SidebarMenuButton asChild tooltip={collection.title}>
+                        <Link href={collection.url}>
+                          <div className="flex flex-col">
+                            <span>{collection.title}</span>
+                            <span className="text-xs text-muted-foreground">{collection.count} notes</span>
+                          </div>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+            </>
+          )}
           <NavDocuments documents={data.documents} />
           <NavSecondary
-            items={data.navSecondary.map((item) =>
-              item.title === "Search" ? { ...item, onClick: () => setSearchOpen(true) } : item,
-            )}
+            items={data.navSecondary}
             className="mt-auto"
           />
         </SidebarContent>

@@ -29,6 +29,12 @@ export function SearchCommand() {
     return () => document.removeEventListener("keydown", down)
   }, [])
 
+  React.useEffect(() => {
+    const handler = () => setOpen(true)
+    window.addEventListener("open-command-palette", handler)
+    return () => window.removeEventListener("open-command-palette", handler)
+  }, [])
+
   return (
     <>
       <CommandDialog open={open} onOpenChange={setOpen}>

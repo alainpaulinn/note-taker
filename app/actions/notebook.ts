@@ -16,6 +16,59 @@ const createNotebookSchema = z.object({
 
 const updateNotebookSchema = createNotebookSchema.partial()
 
+const DEFAULT_NOTEBOOK_COLORS = ["#3b82f6", "#10b981", "#f97316", "#8b5cf6", "#ec4899", "#14b8a6"]
+const DEFAULT_NOTEBOOK_ICONS = ["book", "target", "graduation-cap", "sparkles", "star", "list"]
+
+function pickRandom<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+async function createStarterPage(notebookId: string, userId: string) {
+  const starterContent = `<p class="text-base">Welcome to your new notebook. Capture study plans, meeting notes, or brainstorm ideas.</p>
+  <ul>
+    <li>Use the toolbar to switch between rich text and sketches.</li>
+    <li>Tag notes so you can find them later.</li>
+    <li>Invite collaborators from the notebook menu.</li>
+  </ul>`
+
+  return prisma.page.create({
+    data: {
+      title: "New page",
+      content: starterContent,
+      type: "mixed",
+      notebookId,
+      userId,
+      order: 1,
+      tags: [],
+    },
+  })
+}
+
+async function createNotebookWithDefaults(
+  data: {
+    name: string
+    description?: string | null
+    color?: string | null
+    icon?: string | null
+    visibility?: "private" | "organization" | "public"
+  },
+  userId: string,
+) {
+  const notebook = await prisma.notebook.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      color: data.color || pickRandom(DEFAULT_NOTEBOOK_COLORS),
+      icon: data.icon || pickRandom(DEFAULT_NOTEBOOK_ICONS),
+      visibility: data.visibility || "private",
+      userId,
+    },
+  })
+
+  const starterPage = await createStarterPage(notebook.id, userId)
+  return { notebook, starterPage }
+}
+
 export async function createNotebook(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -39,19 +92,13 @@ export async function createNotebook(formData: FormData) {
   const { name, description, color, icon, visibility } = validatedFields.data
 
   try {
-    const notebook = await prisma.notebook.create({
-      data: {
-        name,
-        description,
-        color: color || "#3b82f6",
-        icon: icon || "book",
-        visibility,
-        userId: session.user.id,
-      },
-    })
+    const { notebook, starterPage } = await createNotebookWithDefaults(
+      { name, description, color, icon, visibility },
+      session.user.id,
+    )
 
     revalidatePath("/notebooks")
-    return { success: true, notebook }
+    redirect(`/app/notebooks/${notebook.id}/pages/${starterPage.id}/edit`)
   } catch (error) {
     console.error("Error creating notebook:", error)
     return {
@@ -245,4 +292,23 @@ export async function recordNotebookAccess(notebookId: string) {
     console.error("Failed to record notebook access:", error)
     throw error
   }
+}
+
+export async function createInstantNotebook() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect("/signin")
+  }
+
+  const name = `Notebook ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+
+  const { notebook, starterPage } = await createNotebookWithDefaults(
+    {
+      name,
+      description: "Click to describe your notebook purpose.",
+    },
+    session.user.id,
+  )
+
+  return { notebookId: notebook.id, pageId: starterPage.id }
 }

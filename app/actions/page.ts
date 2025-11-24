@@ -267,3 +267,40 @@ export async function updatePageDrawing(id: string, drawingData: any) {
     throw error
   }
 }
+
+export async function createInstantPage(notebookId: string) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect("/signin")
+  }
+
+  const notebook = await prisma.notebook.findFirst({
+    where: {
+      id: notebookId,
+      userId: session.user.id,
+    },
+  })
+
+  if (!notebook) {
+    throw new Error("Notebook not found")
+  }
+
+  const lastPage = await prisma.page.findFirst({
+    where: { notebookId },
+    orderBy: { order: "desc" },
+  })
+
+  const page = await prisma.page.create({
+    data: {
+      title: "New page",
+      content: "",
+      type: "mixed",
+      notebookId,
+      userId: session.user.id,
+      order: (lastPage?.order || 0) + 1,
+      tags: [],
+    },
+  })
+
+  return page
+}
